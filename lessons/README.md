@@ -6,7 +6,7 @@
 
 ## 目录
 
-- _待补充_
+- [Discord 配置经验总结（OpenClaw 多 Agent）](./discord-configuration-lessons.md)
 
 ## 写作模板
 
