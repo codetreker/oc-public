@@ -1,8 +1,8 @@
 site_name: OpenClaw Public Knowledge Base
 site_description: Public knowledge base for reusable guides, playbooks, lessons, and references.
-site_url: https://imcodetreker.github.io/oc-public/
-repo_url: https://github.com/imcodetreker/oc-public
-repo_name: imcodetreker/oc-public
+site_url: https://codetreker.github.io/oc-public/
+repo_url: https://github.com/codetreker/oc-public
+repo_name: codetreker/oc-public
 
 theme:
   name: material
