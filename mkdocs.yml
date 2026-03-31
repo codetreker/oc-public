@@ -1,0 +1,33 @@
+site_name: OpenClaw Public Knowledge Base
+site_description: Public knowledge base for reusable guides, playbooks, lessons, and references.
+site_url: https://imcodetreker.github.io/oc-public/
+repo_url: https://github.com/imcodetreker/oc-public
+repo_name: imcodetreker/oc-public
+
+theme:
+  name: material
+  language: zh
+
+docs_dir: docs
+
+nav:
+  - 首页: index.md
+  - 指南: guides/README.md
+  - 操作手册: playbooks/README.md
+  - 经验教训:
+      - 总览: lessons/README.md
+      - Discord 配置经验: lessons/discord-configuration-lessons.md
+  - 参考资料:
+      - 总览: references/README.md
+      - Discord 通讯录模板: references/discord-team-directory.md
+  - 公开决策: decisions/README.md
+  - 维护规范: agents.md
+  - 隐私红线: privacy-rules.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+
+strict: true
