@@ -1,34 +1,30 @@
-# Discord 团队通讯录（真实 Mention）
+# Discord Team Directory (Public-Safe Template)
 
-最后更新：2026-03-31
+Last updated: 2026-03-31
 
-> 用途：确保团队沟通时可以直接使用真实 mention（`<@USER_ID>`）触发对方。
+> Public repo notice: This file is **template-only**. Do not store real user IDs, names, handles, emails, tokens, or internal endpoints here.
 
-## 核心成员
+## Purpose
 
-- Architect：`<@1488038716588032100>`
-- Product Manager（PM）：`<@1488121606545870890>`
-- Dev：`<@1488123149701615646>`
-- QA：`<@1488124480373919937>`
-- 飞马（pegasus / main）：`<@1485623074857422848>`
-- 建军：`<@840099592598192148>`
+Provide a safe mention format template for public documentation.
 
-## 使用规范
+## Template
 
-1. 需要对方响应时，必须使用 `<@USER_ID>`。
-2. 纯文本 `@名字` 不作为可靠触发方式。
-3. 需要多人响应时，逐个真实 mention。
+- Architect: `<@ARCHITECT_USER_ID>`
+- Product Manager: `<@PM_USER_ID>`
+- Dev: `<@DEV_USER_ID>`
+- QA: `<@QA_USER_ID>`
+- Coordinator: `<@COORDINATOR_USER_ID>`
 
-## 示例
+## Rules
+
+1. Use real mention format `<@USER_ID>` when you need a response.
+2. Never commit real identities or IDs in this public repository.
+3. Keep the real directory in a private knowledge base only.
+
+## Example
 
 ```text
-<@1488123149701615646> 麻烦你看一下这个 bug
-<@1488038716588032100> <@1488124480373919937> 请你们协同评审
+<@DEV_USER_ID> please check this bug.
+<@ARCHITECT_USER_ID> <@QA_USER_ID> please review together.
 ```
-
-## 维护规则
-
-- 若 bot 重建、账号变更，必须第一时间更新本文件。
-- 更新后同步更新：
-  - `lessons/discord-configuration-lessons.md`
-  - 群内公告（要求团队确认）
