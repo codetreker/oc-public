@@ -10,6 +10,8 @@
 
 ## 一、核心结论（先看这个）
 
+> 团队通讯录见：[references/discord-team-directory.md](../references/discord-team-directory.md)
+
 1. **必须使用真实 mention**：`<@USER_ID>`
    - 纯文本 `@名字` 在很多情况下不会出现在 `mentions[]`，触发失败。
 2. **bot 间沟通要显式放行**：每个账号配置 `allowBots: "mentions"`

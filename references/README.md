@@ -6,4 +6,4 @@
 
 ## 目录
 
-- _待补充_
+- [Discord 团队通讯录（真实 Mention）](./discord-team-directory.md)
