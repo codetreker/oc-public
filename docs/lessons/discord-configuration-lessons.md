@@ -1,6 +1,6 @@
 # Discord 配置经验总结(OpenClaw 多 Agent)
 
-最后更新:2026-04-01
+最后更新：2026-04-01（晚）
 
 ## 适用场景
 
@@ -179,3 +179,136 @@ Dev / QA / Doctor 三个账号均配置了：
 ### 一句话
 
 > `ignoreOtherMentions: true` 会让 bot 在 **被 mention 时仍然不响应**，是 bot-to-bot 协作中最隐蔽的坑之一。除非明确需要只响应人类指令，否则不要设置。
+
+---
+
+## 八、多 Agent 协作的正确 Policy 配置模式（2026-04-01）
+
+### 背景
+
+今天花了整整半天在 `allowFrom` / `groupPolicy` / `dmPolicy` / `guilds.users` 上反复折腾，走了很多弯路。这里把最终正确的配置模式和踩过的所有坑记录下来。
+
+---
+
+### 正确配置结构（经验证可用）
+
+```json
+{
+  "channels": {
+    "discord": {
+      "groupPolicy": "allowlist",
+      "accounts": {
+        "<agent>": {
+          "allowBots": "mentions",
+          "dmPolicy": "pairing",
+          "groupPolicy": "allowlist",
+          "guilds": {
+            "<guild_id>": {
+              "requireMention": true,
+              "users": ["*"],
+              "channels": {
+                "*": { "allow": true }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### 各字段含义与分工
+
+| 字段 | 作用域 | 说明 |
+|------|--------|------|
+| `groupPolicy: allowlist` | guild 消息入口 | 只接受白名单 guild 的消息，配合 `guilds` 块使用 |
+| `dmPolicy: pairing` | DM 入口 | 私信需要配对，防止陌生人 DM |
+| `allowBots: mentions` | bot 消息过滤 | 允许 bot 发来的含 mention 的消息触发响应 |
+| `guilds.<id>.users` | guild 内人类用户白名单 | `["*"]` 表示该 guild 内所有用户；也可以写具体 ID |
+| `guilds.<id>.channels` | 频道白名单 | `{"*": {"allow": true}}` 表示所有频道都开放 |
+| `guilds.<id>.requireMention` | 触发条件 | `true` = 必须被 @ 才响应 |
+| `allowFrom` | DM sender 白名单 | **只对 DM 生效**，不影响 guild 消息 |
+
+### 关键结论：`allowFrom` 只管 DM，不管 guild
+
+这是今天最大的误解来源。
+
+`allowFrom` 的作用范围是 **DM（私信）**，不是 guild 频道消息。
+
+- 用 `allowFrom` 控制 guild 消息 → **无效**，guild 消息走 `guilds.users` 白名单
+- 用 `allowFrom` 放进 bot ID 来让 bot 消息通过 → **错误方向**，bot 消息通过 `allowBots` 控制
+
+**正确分层：**
+```
+DM 保护     →  dmPolicy + allowFrom（只放真实用户 ID）
+Guild 保护  →  groupPolicy + guilds.<id>.users（人类用户白名单）
+Bot 消息    →  allowBots: mentions（独立控制，不走 users）
+```
+
+### 踩过的坑
+
+#### 坑 1：`allowFrom` 只放 owner，bot 消息被拦
+
+```json
+// ❌ 错误：只放了 owner，Pegasus 发的 @Dev 消息被拦
+"allowFrom": ["discord:840099592598192148"]
+```
+
+**现象：** Pegasus @Architect/@Dev/@PM/@QA，日志全部 `reason: no-mention`，无人响应。
+**原因：** `allowFrom` 对 guild 消息也生效（作为 sender 过滤的第一道门），Pegasus 的 sender ID 不在白名单里直接被拒。
+**教训：** 如果要用 `allowFrom` 限制 DM，不要同时用它控制 guild，或者把所有 bot ID 都加进去——但这样维护成本高，不推荐。最好直接用 `dmPolicy: pairing`，不用 `allowFrom`。
+
+#### 坑 2：`guilds.users` 只放 owner ID，bot 发的消息触发不了
+
+```json
+// ❌ 错误
+"guilds": {
+  "1485621725197631550": {
+    "users": ["840099592598192148"]  // 只有 owner
+  }
+}
+```
+
+**现象：** 同上，bot-to-bot mention 全部失效。
+**原因：** `guilds.users` 是人类用户白名单，bot 消息走 `allowBots` 路径，两者独立，但 `users` 不包含 owner 时连你自己发消息也触发不了。
+**修复：** `"users": ["*"]` 开放所有用户，安全边界靠 `groupPolicy: allowlist` + `guilds` 绑定到具体 guild 来保证。
+
+#### 坑 3：`allowFrom` 的 ID 格式
+
+```json
+// ✅ 正确格式（带 discord: 前缀）
+"allowFrom": ["discord:840099592598192148"]
+
+// ❓ 可能有问题（不带前缀）
+"allowFrom": ["840099592598192148"]
+```
+
+日志会显示 `discord users resolved: discord:840099592598192148→840099592598192148`，说明 `discord:` 前缀是必要的，gateway 会做解析。
+
+#### 坑 4：`channels.*` 通配符 + `requireMention`
+
+```json
+// 只对特定频道要求 mention，其他频道不要求
+"channels": {
+  "*": { "allow": true, "requireMention": true }  // 全部频道都要求 mention
+  // 如果想部分频道不要求，需要逐一列出
+}
+```
+
+`channels.*` 是通配符，会覆盖所有频道。如果想某些频道不需要 mention（比如 main bot 的 general 频道），需要单独配具体 channel ID。
+
+### 最终有效配置模式总结
+
+```
+groupPolicy: allowlist          ← guild 消息入口锁
+dmPolicy: pairing               ← DM 入口用配对，不用 allowFrom
+allowBots: mentions             ← bot 消息开关
+guilds.<id>.users: ["*"]       ← guild 内人类用户全开，安全靠 guild 绑定
+guilds.<id>.channels.*: allow  ← 频道全开，需要 mention 触发的加 requireMention
+allowFrom: 不用                 ← 除非有严格 DM 白名单需求
+```
+
+### 一句话
+
+> `allowFrom` 只管 DM，`guilds.users` 管 guild 人类消息，`allowBots` 管 bot 消息，三条路互相独立，搞混任意一条都会导致消息静默丢失。
